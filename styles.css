@@ -1,0 +1,189 @@
+/* Colorful, optimistic theme (yellow/orange focus) targeting 9–18 years */
+:root{
+  --bg:#fff7ea;
+  --card:#fff;
+  --text:#2b2b2b;
+  --brand:#ff8c00;
+  --brand-2:#ffc400;
+  --accent:#ffb74d;
+  --accent-2:#ffe082;
+  --ok:#23a36a;
+  --bad:#d64545;
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: radial-gradient(1200px 800px at 20% -10%, var(--accent-2), transparent 60%),
+              radial-gradient(1200px 800px at 110% 10%, var(--accent), transparent 60%),
+              var(--bg);
+  font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:var(--text);
+}
+h1,h2,h3{margin:0 0 .5rem}
+h1{font-family:'Fredoka', cursive; font-weight:800; font-size:2.2rem}
+.brand{color:var(--brand)}
+.subtitle{color:#6a5b00; margin:.25rem 0 1rem; font-weight:600}
+
+#app{max-width:1100px; margin:0 auto; padding:24px}
+
+.screen { display: none; }
+.screen.visible { display: block; }
+
+.card{
+  background:var(--card);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:24px;
+}
+.card.center{ text-align:center; padding:48px }
+
+.input-group{display:flex; flex-direction:column; gap:.25rem; margin:.5rem 0 1rem}
+input{
+  padding:.8rem 1rem; border:2px solid #ffe6a3; border-radius:14px; outline:none;
+  font-size:1rem; transition:.2s;
+}
+input:focus{ border-color: var(--brand) }
+label{ font-weight:700; font-size:.9rem }
+
+.btn{
+  cursor:pointer; user-select:none;
+  border:none; border-radius:999px; padding:.9rem 1.4rem;
+  font-weight:800; letter-spacing:.2px; box-shadow:var(--shadow);
+}
+.btn.primary{ background: linear-gradient(45deg, var(--brand), var(--brand-2)); color:#fff }
+.btn.secondary{ background:#fff; border:2px solid var(--brand); color:var(--brand) }
+.btn:active{ transform: translateY(1px) }
+
+.helper{ margin-top:1rem; color:#6b5a12 }
+
+.hud{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin:16px 0 }
+.hud-item{ background:#fff; border-radius:14px; padding:.5rem .9rem; box-shadow:var(--shadow); font-weight:700 }
+.level-pill{ display:inline-block; background:var(--brand-2); color:#5a3d00; padding:.3rem .8rem; border-radius:999px; font-weight:900 }
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:14px;
+}
+.tile{
+  background:#fff; border-radius:18px; box-shadow:var(--shadow); overflow:hidden;
+  position:relative; cursor:pointer; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+  border:3px solid transparent; transition:.2s;
+}
+.tile:hover{ transform: translateY(-2px) }
+.tile img{ width:100%; height:100%; object-fit:cover; }
+.tile.dev{ font-weight:900; font-size:1.6rem }
+
+.feedback{ min-height:28px; font-weight:800; margin:.5rem 0 }
+.feedback.ok{ color:var(--ok) }
+.feedback.bad{ color:var(--bad) }
+
+.results{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin:16px 0 20px;
+}
+.results > div{ background:#fff; border-radius:16px; padding:1rem; box-shadow:var(--shadow); text-align:center }
+.results span{ display:block; color:#6b5a12; font-weight:700 }
+.results b{ font-size:1.6rem }
+
+
+.leaderboard{ margin-top:10px; background:#fff; border-radius:14px; box-shadow:var(--shadow) }
+.leaderboard-row{ display:grid; grid-template-columns: 80px 1fr 120px 120px; gap:8px; padding:.7rem 1rem; align-items:center }
+.leaderboard-row.header{ font-weight:900; background:linear-gradient(90deg, #fff7d0, #fff) }
+.leaderboard-row:nth-child(even){ background:#fffdf3 }
+/* ★ 行高亮（一定放在后面，覆盖前面的背景） */
+.leaderboard-row.me{ background:#baff9a !important; font-weight:700; }
+
+.countdown{ font-family:'Fredoka', cursive; font-size:3.6rem; color:#4a3b00 }
+.countdown span{ display:none }
+.countdown span.show{ display:inline-block; animation:pop .4s both }
+@keyframes pop{ from{ transform:scale(.4); opacity:.3 } to { transform:scale(1); opacity:1 } }
+
+.dev-toggle{ margin:.5rem 0 1rem }
+.checkbox{ display:flex; align-items:center; gap:.5rem; font-weight:700 }
+
+/* Target screen + compare + overlays */
+.target-wrap{ display:flex; justify-content:center; margin:18px 0 }
+.target-tile{
+  width:180px; height:180px; background:#fff; border-radius:22px;
+  box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:2rem; border:3px solid #ffe299;
+}
+.tile .mark{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:3rem; font-weight:900; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,.3);
+  opacity:0; transition:.15s;
+}
+.tile.correct .mark{ background:rgba(35,163,106,.7); opacity:1; }
+.tile.wrong   .mark{ background:rgba(214,69,69,.78); opacity:1; }
+
+.compare{
+  display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin:14px 0 6px;
+}
+.compare .small{
+  height:140px; border-radius:18px; background:#fff; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.4rem; border:3px solid #ffe299;
+}
+.compare-caption{ display:grid; grid-template-columns:1fr 1fr; gap:18px; font-weight:800; color:#6b5a12 }
+
+.my-summary{
+  position: relative;
+  margin: 18px 0 22px;
+  padding: 20px 22px 28px;
+  border-radius: 18px;
+  background: #ffe07a;  /* 温暖黄 */
+  box-shadow: var(--shadow);
+}
+.mys-header{
+  text-align:center;
+  font-weight: 800;
+  font-size: 30px;
+  margin-bottom: 16px;
+}
+.mys-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  background:#bfbfbf;     /* 你的参考图里是灰条 */
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+.mys-label{ font-size: 18px; font-weight: 700; }
+.mys-value{ font-size: 18px; font-weight: 800; }
+
+.mys-next{
+  position:absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: #9f86ff;    /* 紫色按钮 */
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+.mys-next:active{ transform: translateY(1px); }
+
+/* 个人行高亮（你之前的排行样式保持） */
+.leaderboard-row.me{
+  background:#b7ffb7 !important;
+  font-weight:700;
+}
+
+/* 排行榜纯净模式：只隐藏 “Thanks for playing!” 标题 + 三个统计框 */
+#final-screen.ranking-only h2,
+#final-screen.ranking-only .results {
+  display: none !important;
+}
+
+/* 保留按钮：这行不要启用（保持注释或删掉） */
+/* #final-screen.ranking-only .actions { display: none !important; } */
+
+/* 让排行榜往上顶一点（可选） */
+#final-screen.ranking-only .leaderboard-title {
+  margin-top: 8px;
+}

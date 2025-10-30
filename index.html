@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Geng or Blur? [v2]</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div id="app">
+<!-- Start Screen -->
+<section id="start-screen" class="screen visible">
+  <div class="card">
+    <h1>Welcome to <span class="brand">Geng or Blur?</span></h1>
+    <p class="subtitle">Fast eyes. Sharp mind. Can you spot the real one?</p>
+
+    <form id="player-form">
+      <div class="input-group">
+        <label for="player-name">Name</label>
+        <input id="player-name" name="name"
+               type="text" required
+               pattern="^[A-Za-z0-9_]{3,20}$"
+               title="3-20 characters, only letters, numbers, and underscores _" />
+      </div>
+
+      <div class="input-group">
+        <label for="player-email">Email</label>
+        <input id="player-email" name="email"
+               type="email" required
+               pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+               title="Please enter a valid email address, e.g. name@example.com" />
+      </div>
+
+      <!-- 错误提示容器（JS 会写这里） -->
+      <p id="form-error" class="form-error"
+         style="display:none;color:#c0392b;margin:8px 0 0 2px;"></p>
+
+      <details class="dev-toggle">
+        <summary>Developer Options</summary>
+        <label class="checkbox">
+          <input id="dev-mode" type="checkbox" checked>
+          Dev Mode (use placeholder images)
+        </label>
+      </details>
+
+      <button id="start-btn" type="submit" class="btn primary">START</button>
+    </form>
+  </div>
+</section>
+
+
+    <!-- Countdown Screen -->
+    <section id="countdown-screen" class="screen">
+      <div class="card center">
+        <p class="level-pill">Level <span id="level-name">Rookie</span></p>
+        <h2 class="countdown">
+          <span id="count-3">3</span><span id="count-2">2</span><span id="count-1">1</span> <span id="count-go">Go!</span>
+        </h2>
+      </div>
+    </section>
+
+    <!-- Target / Prompt Screen -->
+    <section id="target-screen" class="screen">
+      <div class="card center">
+        <p class="level-pill">Find This!</p>
+        <div class="target-wrap">
+          <div id="target-preview" class="target-tile dev"></div>
+        </div>
+        <p class="subtitle">Memorise this image, then find it among the 9 tiles.</p>
+       <!-- <button id="start-round" class="btn primary">I'm Ready</button> -->
+      </div>
+    </section>
+
+    <!-- Game Screen -->
+    <section id="game-screen" class="screen">
+      <div class="hud">
+        <div class="hud-item theme-tag">Theme: <b id="theme-name"></b></div>
+        <div class="hud-item timer">Timer: <b id="timer">00:20</b></div>
+        <div class="hud-item score">Score: <b id="score">0</b></div>
+      </div>
+      <div id="grid" class="grid"></div>
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <!-- Answer / Compare -->
+    <section id="answer-screen" class="screen">
+      <div class="card center">
+        <h3 id="answer-title">Correct!</h3>
+        <p id="answer-details"></p>
+        <button id="next-question" class="btn primary">Next</button>
+      </div>
+    </section>
+
+    <!-- Summary Screen (NEW) -->
+<section id="summary-screen" class="screen">
+  <div class="card center">
+
+<h2 style="margin-bottom:14px">Your Result — <span id="mys-username">Player</span></h2>
+
+<div id="my-summary" class="my-summary" aria-live="polite">
+  <div class="mys-row">
+    <div class="mys-label">Total Score :</div>
+    <div class="mys-value" id="mys-score">0</div>
+  </div>
+
+  <div class="mys-row">
+    <div class="mys-label">Total Duration :</div>
+    <div class="mys-value" id="mys-dur">00:00</div>
+  </div>
+
+  <button id="mys-next" class="mys-next" title="See Ranking" aria-label="See Ranking">▶</button>
+</div>
+
+
+  </div>
+</section>
+
+
+<!-- Final Screen -->
+<section id="final-screen" class="screen">
+  <div class="card center">
+    <h2>Thanks for playing!</h2>
+    <div class="results">
+      <div><span>Total Score</span><b id="final-score">0</b></div>
+      <div><span>Total Duration</span><b id="final-duration">00:00</b></div>
+      <div><span>Accuracy</span><b id="final-accuracy">0%</b></div>
+    </div>
+
+    <!-- Leaderboard -->
+    <h3 class="leaderboard-title">
+      Top Ranking
+      <button id="lb-toggle" class="btn tiny" style="margin-left:10px">Show All</button>
+    </h3>
+
+    <div id="leaderboard" class="leaderboard">
+      <div class="leaderboard-row header"><span>Rank</span><span>Name</span><span>Score</span><span>Duration</span></div>
+    </div>
+
+    <div class="actions" style="margin-top:14px">
+      <button id="download-cert" class="btn secondary">Download Certificate (PDF)</button>
+      <button id="play-again" class="btn primary">Play Again</button>
+    </div>
+  </div>
+</section>
+
+  <!-- 强制版本参数防缓存 -->
+  <script src="script.js?v=20251029a"></script>
+
+</body>
+</html>
