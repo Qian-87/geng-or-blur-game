@@ -15,10 +15,10 @@ $options = [
   PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
-try{
+try {
   $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
-}catch(Exception $e){
+} catch (Exception $e) {
   http_response_code(500);
-  echo json_encode(["error"=>"DB connection failed"]);
+  echo json_encode(["error" => "DB connection failed"]);
   exit;
 }

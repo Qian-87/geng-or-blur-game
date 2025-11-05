@@ -1,6 +1,6 @@
 // Geng or Blur? Web Game (v2 clean)
 
-const GAME_NAME = "Geng or Blur?";
+const GAME_NAME = "Flash Match Challenge";
 const LEVELS = [
   { key: "rookie",  label: "Rookie",  basePoints: 10, timeBonusPer2s: 1, wrongPenalty: -2,  timeLimit: 20 },
   { key: "elite",   label: "Elite",   basePoints: 20, timeBonusPer2s: 2, wrongPenalty: -5,  timeLimit: 15 },
@@ -73,7 +73,8 @@ function pickRoundParams(){
 
 // DOM
 const screens = {
-  start:     document.getElementById("start-screen"),
+  start:     document.getElementById("start-screen"), 
+  instruction: document.getElementById("instruction-screen"),
   countdown: document.getElementById("countdown-screen"),
   target:    document.getElementById("target-screen"),
   game:      document.getElementById("game-screen"),
@@ -106,6 +107,9 @@ const mysUserEl   = document.getElementById("mys-username");
 const mysScoreEl  = document.getElementById("mys-score");   // NEW
 const mysDurEl    = document.getElementById("mys-dur");
 const mysNextBtn  = document.getElementById("mys-next");
+// 🟢 Instruction screen elements
+const instrNextBtn = document.getElementById("instr-next");
+const instrNameEl  = document.getElementById("instr-player-name");
 
 
 
@@ -147,12 +151,8 @@ function msToClock(ms){
 
 // Start
 // ===== Frontend gatekeeping =====
-const ALLOWED_DOMAINS = new Set([
-  "gmail.com", "outlook.com", "hotmail.com", "yahoo.com", "utar.edu.my"
-]);
-
-const NAME_RE   = /^[A-Za-z0-9_]{1,32}$/;
-const EMAIL_TYPOS = ["@gmil.", "@gmal.", "@gmail.con", "@hotnail.", "@outlok."]; // 软提醒
+const NAME_RE   = /^[A-Za-z ]{1,32}$/;
+const gmailRegex = /^[^\s@]+@[^\s@]+\.[a-z]{2,}(\.[a-z]{2,})?$/;
 
 const formErrorEl = document.getElementById("form-error");
 const startBtnEl  = document.getElementById("start-btn");
@@ -170,29 +170,23 @@ function clearFormError() {
 function sanitizeName(raw) {
   // 去前后空格，剔除不可见字符，强制只保留允许字符
   return (raw || "")
-    .trim()
+
     .replace(/[^\x20-\x7E]/g, "")        // 去掉不可见/emoji
-    .replace(/[^A-Za-z0-9_]/g, "")       // 非法字符清掉
-    .slice(0, 32);
+    .replace(/[^A-Za-z ]/g, "")       // 非法字符清掉
+    .replace(/\s{2,}/g, " ")     // 多空格合并为单空格
 }
 
 function validateEmailStrong(email) {
-  if (!email) return { ok: false, msg: "Email is required." };
-  // 浏览器已做了一层格式校验，再做一次更稳
-  const okFormat = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-  if (!okFormat) return { ok: false, msg: "Invalid email format." };
-
-  // 白名单域名
-  const domain = email.split("@")[1].toLowerCase();
-  if (!ALLOWED_DOMAINS.has(domain)) {
-    return { ok: false, msg: "Only gmail/outlook/hotmail/yahoo/utar.edu.my are accepted." };
+  if (!email.trim()) {
+    return { ok: false, msg: "Please enter your email address." };
   }
 
-  // 软提醒：常见拼错（不拦截，只提示）
-  if (EMAIL_TYPOS.some(t => email.toLowerCase().includes(t))) {
-    return { ok: true, warn: "This email looks misspelled, please double-check the domain." };
+  // 检查格式
+  if (!gmailRegex.test(email)) {
+    return { ok: false, msg: "Invalid email format." };
   }
 
+  // 符合格式就通过
   return { ok: true };
 }
 
@@ -204,7 +198,7 @@ nameInput.addEventListener("input", () => {
   const sanitized = sanitizeName(nameInput.value);
   if (sanitized !== nameInput.value) nameInput.value = sanitized;
   if (sanitized && !NAME_RE.test(sanitized)) {
-    showFormError("Name: only letters, numbers and underscore (_), up to 32 chars.");
+    showFormError("Name: only letters and spaces");
   } else {
     clearFormError();
   }
@@ -229,7 +223,7 @@ playerForm.addEventListener("submit", async (e) => {
     return;
   }
   if (!NAME_RE.test(name)) {
-    showFormError("Name: only letters, numbers and underscore (_), up to 32 chars.");
+    showFormError("Name: only letters and spaces");
     nameInput.focus();
     return;
   }
@@ -243,8 +237,8 @@ playerForm.addEventListener("submit", async (e) => {
   if (emailCheck.warn) {
     // 温柔提醒，不拦截
     showFormError(emailCheck.warn);
-    // 2 秒后自动清掉提示，继续走流程
-    setTimeout(clearFormError, 2000);
+    // 5 秒后自动清掉提示，继续走流程
+    setTimeout(clearFormError, 5000);
   }
 
   // disable 连点
@@ -254,7 +248,7 @@ playerForm.addEventListener("submit", async (e) => {
   try {
     // 走你现有的开局流程
     state.player = { name, email };
-    state.devMode = devToggle.checked;
+    state.devMode = false; //devToggle.checked;
 
     state.levelIndex = 0;
     state.questionIndex = 0;
@@ -262,9 +256,9 @@ playerForm.addEventListener("submit", async (e) => {
     state.correctCount = 0;
     state.totalDurationMs = 0;
 
-    runLevelIntro();
+    instrNameEl.textContent = name;
+    showScreen("instruction");
   } finally {
-    // 1秒后恢复按钮（防手抖多次提交）
     setTimeout(() => {
       startBtnEl.disabled = false;
       startBtnEl.textContent = "START";
@@ -272,33 +266,34 @@ playerForm.addEventListener("submit", async (e) => {
   }
 });
 
+// 🟢 说明画面按钮
+instrNextBtn.addEventListener("click", () => {
+  runLevelIntro();
+});
+//-------------------------------------------------------
 
-
-// Countdown -> Target
-function runLevelIntro(){
-  const level = LEVELS[state.levelIndex];
-  levelNameEl.textContent = level.label;
-  showScreen("countdown");
-
-  const s3 = document.getElementById("count-3");
-  const s2 = document.getElementById("count-2");
-  const s1 = document.getElementById("count-1");
-  const go = document.getElementById("count-go");
-  [s3,s2,s1,go].forEach(n => n.classList.remove("show"));
-
-  let c = 3;
-  const seq = setInterval(()=>{
-    if(c===3) s3.classList.add("show");
-    if(c===2) s2.classList.add("show");
-    if(c===1) s1.classList.add("show");
-    if(c===0){
-      go.classList.add("show");
-      clearInterval(seq);
-      setTimeout(()=>prepareTargetAndShow(), 600);
+// Countdown -> Target 
+    function runLevelIntro()
+    { const level = LEVELS[state.levelIndex];
+    levelNameEl.textContent = level.label; 
+    showScreen("countdown"); 
+    const s3 = document.getElementById("count-3"); 
+    const s2 = document.getElementById("count-2"); 
+    const s1 = document.getElementById("count-1"); 
+    const go = document.getElementById("count-go"); 
+    [s3,s2,s1,go].forEach(n => n.classList.remove("show")); 
+    
+    let c = 3; 
+    const seq = setInterval(()=>{ if(c===3) s3.classList.add("show"); 
+        if(c===2) s2.classList.add("show"); 
+        if(c===1) s1.classList.add("show"); 
+        if(c===0){ go.classList.add("show"); 
+        clearInterval(seq); 
+        setTimeout(()=>prepareTargetAndShow(), 600);
+     } 
+     c--; }, 
+     600); 
     }
-    c--;
-  }, 600);
-}
 
 function prepareTargetAndShow(){
   // 设置本题的主题、难度、组号、正确答案索引
@@ -439,7 +434,9 @@ function applyScore(isCorrect, level, secsLeft){
     feedbackEl.classList.add("bad");
   }
   state.score += delta;
+  state.lastDelta = delta;  // 新增，记录该题得分
   scoreEl.textContent = state.score;
+  
 }
 
 // Compare
@@ -449,10 +446,15 @@ function showAnswer(isCorrect, level, secsLeft){
 
   const pick = state.lastPickIndex;
   const correct = state.correctIndex;
-  const detailText = isCorrect
-    ? `You picked the right image. Time left: ${secsLeft}s`
-    : `Correct image shown on the left. Your choice on the right. Time left: ${secsLeft}s`;
-
+const timeUsed = Math.round((performance.now() - state.questionStartTs) / 1000);
+const detailText = `
+  ${isCorrect ? "You picked the right image!" : "Correct image shown on the left. Your choice on the right."}
+  <br><br>
+  <strong>Time Used:</strong> ${timeUsed}s <br>
+  <strong>Time Left:</strong> ${secsLeft}s <br>
+  <strong>Score:</strong> ${state.lastDelta >= 0 ? "+" + state.lastDelta : state.lastDelta} <br>
+  <strong>Total Score:</strong> ${state.score}<br>
+`;
   if(state.devMode){
     const yourSymbol = (pick === correct) ? "⭐" : "•";
     answerDetails.innerHTML = `
@@ -646,6 +648,37 @@ function renderLeaderboard(apiRows, me){
 }
 
 
+//Fullscreen Settings
+const fullscreenBtn = document.getElementById("fullscreen-btn");
+
+fullscreenBtn.addEventListener("click", () => {
+  const elem = document.documentElement; // 整个网页
+
+  if (!document.fullscreenElement) {
+    // 进入全屏
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { // Safari
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE/Edge
+      elem.msRequestFullscreen();
+    }
+    fullscreenBtn.textContent = "⛶ Exit Fullscreen";
+  } else {
+    // 退出全屏
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+    fullscreenBtn.textContent = "⛶ Fullscreen";
+  }
+});
+
+
+
 // Certificate
 downloadCertBtn.addEventListener("click", ()=>{
   const { jsPDF } = window.jspdf;
@@ -653,34 +686,77 @@ downloadCertBtn.addEventListener("click", ()=>{
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
-  doc.setFillColor(255, 248, 225); doc.rect(0,0,w,h,"F");
-  doc.setDrawColor(255, 196, 0); doc.setLineWidth(6); doc.rect(24,24,w-48,h-48);
+  // 背景与边框
+  doc.setFillColor(255, 255, 225);
+  doc.setDrawColor(255, 196, 0);
+  doc.setLineWidth(6);
+  doc.rect(24, 24, w - 48, h - 48);
 
-  doc.setTextColor(255,140,0); doc.setFont("helvetica","bold"); doc.setFontSize(36);
-  doc.text("Certificate of Achievement", w/2, 130, {align:"center"});
+  // Logo 设置
+  const logoPath = "logo/MMLM_logo.png"; // 你的logo路径
+  const logoWidth = 350;   // 可调整宽度
+  const logoHeight = 100;  // 可调整高度
+  const logoY = 65;        // 从顶部的距离（调大往下）
 
-  doc.setTextColor(0,0,0); doc.setFontSize(18);
-  doc.text(`This certifies that`, w/2, 180, {align:"center"});
+  // 加载图片（异步）
+  const img = new Image();
+  img.src = logoPath;
+  img.onload = function() {
+    const logoX = (w - logoWidth) / 2;
+    doc.addImage(img, "PNG", logoX, logoY, logoWidth, logoHeight);
 
-  doc.setTextColor(90,60,0); doc.setFont("helvetica","bold"); doc.setFontSize(26);
-  doc.text(state.player.name || "Player", w/2, 220, {align:"center"});
+    // 所有文字整体往下移
+    const yOffset = logoHeight + 5; // 文字起始位置 = logo 底部往下 30px
 
-  const acc = Math.round((state.correctCount / state.totalQuestions) * 100);
-  doc.setTextColor(0,0,0); doc.setFont("helvetica","normal"); doc.setFontSize(16);
-  doc.text(`has completed ${GAME_NAME} with the following results:`, w/2, 260, {align:"center"});
+    doc.setTextColor(255,140,0);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(30);
+    doc.text(GAME_NAME, w/2, 120 + yOffset, {align:"center"});
 
-  doc.setFont("helvetica","bold");
-  doc.text(`Score: ${state.score}   •   Duration: ${msToClock(state.totalDurationMs)}   •   Accuracy: ${acc}%`, w/2, 300, {align:"center"});
+    doc.setTextColor(0,0,0);
+    doc.setFont("times","italic bold");
+    doc.setFontSize(36);
+    doc.text("Certificate of Achievement", w/2, 180 + yOffset, {align:"center"});
 
-  const dateStr = new Date().toLocaleDateString();
-  doc.setFont("helvetica","normal");
-  doc.text(`Email: ${state.player.email}    Date: ${dateStr}`, w/2, 340, {align:"center"});
+    doc.setTextColor(0,0,0);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(18);
+    doc.text(`This certificate is awarded to`, w/2, 220 + yOffset, {align:"center"});
 
-  doc.setTextColor(255,140,0); doc.setFont("helvetica","bold"); doc.setFontSize(22);
-  doc.text(GAME_NAME, w/2, 390, {align:"center"});
+    doc.setTextColor(36,36,36);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(30);
+    doc.text(state.player.name || "Player", w/2, 270 + yOffset, {align:"center"});
 
-  doc.save(`Certificate_${state.player.name || "player"}.pdf`);
+    // 加一条实线
+  doc.setDrawColor(0, 0, 0);   // 黑色线条
+  doc.setLineWidth(0.8);       // 线条粗细，可调
+  doc.line(w * 0.25, 280 + yOffset, w * 0.75, 280 + yOffset); // 从 25% 到 75% 宽度画水平线
+
+    const acc = Math.round((state.correctCount / state.totalQuestions) * 100);
+    doc.setTextColor(0,0,0);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(16);
+    doc.text(`with the following results:`, w/2, 300 + yOffset, {align:"center"});
+
+    doc.setFont("helvetica","bold");
+    doc.text(`Score: ${state.score}       Duration: ${msToClock(state.totalDurationMs)}       Accuracy: ${acc}%`, w/2, 340 + yOffset, {align:"center"});
+
+    const dateStr = new Date().toLocaleDateString();
+    doc.setFont("helvetica","normal");
+    doc.text(`Date: ${dateStr}`, w/2, 390 + yOffset, {align:"center"});
+
+
+
+    // 保存PDF
+    doc.save(`Certificate_${state.player.name || "player"}.pdf`);
+  };
+
+  img.onerror = function() {
+    alert("⚠️ 无法加载 logo，请检查路径是否正确: " + logoPath);
+  };
 });
+
 
 playAgainBtn.addEventListener("click", ()=>{
   window.location.href = "./index.html";
