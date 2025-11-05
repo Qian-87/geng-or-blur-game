@@ -142,7 +142,7 @@ label{ font-weight:700; font-size:.9rem }
   display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin:14px 0 6px;object-fit: cover;
 }
 .compare .small{
-  height: 380px; border-radius:250px; background:#fff; box-shadow:var(--shadow);
+  height: 400px; border-radius:250px; background:#fff; box-shadow:var(--shadow);
   display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.4rem; border:3px solid #ffe299;
 }
 .compare-caption{ display:grid; grid-template-columns:1fr 1fr; gap:18px; font-weight:800; color:#6b5a12 }

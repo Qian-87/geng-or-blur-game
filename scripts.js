@@ -450,10 +450,12 @@ const timeUsed = Math.round((performance.now() - state.questionStartTs) / 1000);
 const detailText = `
   ${isCorrect ? "You picked the right image!" : "Correct image shown on the left. Your choice on the right."}
   <br><br>
-  <strong>Time Used:</strong> ${timeUsed}s <br>
-  <strong>Time Left:</strong> ${secsLeft}s <br>
-  <strong>Score:</strong> ${state.lastDelta >= 0 ? "+" + state.lastDelta : state.lastDelta} <br>
-  <strong>Total Score:</strong> ${state.score}<br>
+<span style="margin-right: 65px;"><strong>Time Used:</strong> ${timeUsed}s</span>
+<strong>Score:</strong> ${state.lastDelta >= 0 ? "+" + state.lastDelta : state.lastDelta} <br>
+<span style="margin-right: 40px;"><strong>Time Left:</strong> ${secsLeft}s</span>
+<strong>Total Score:</strong> ${state.score}<br>
+  
+
 `;
   if(state.devMode){
     const yourSymbol = (pick === correct) ? "⭐" : "•";
@@ -740,7 +742,7 @@ downloadCertBtn.addEventListener("click", ()=>{
     doc.text(`with the following results:`, w/2, 300 + yOffset, {align:"center"});
 
     doc.setFont("helvetica","bold");
-    doc.text(`Score: ${state.score}       Duration: ${msToClock(state.totalDurationMs)}       Accuracy: ${acc}%`, w/2, 340 + yOffset, {align:"center"});
+    doc.text(`Score: ${state.score}             Duration: ${msToClock(state.totalDurationMs)}`, w/2, 340 + yOffset, {align:"center"});
 
     const dateStr = new Date().toLocaleDateString();
     doc.setFont("helvetica","normal");
