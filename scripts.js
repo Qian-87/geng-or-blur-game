@@ -695,7 +695,7 @@ downloadCertBtn.addEventListener("click", ()=>{
   // Logo 设置
   const logoPath = "logo/MMLM_logo.png"; // 你的logo路径
   const logoWidth = 350;   // 可调整宽度
-  const logoHeight = 100;  // 可调整高度
+  const logoHeight = 130;  // 可调整高度
   const logoY = 65;        // 从顶部的距离（调大往下）
 
   // 加载图片（异步）
