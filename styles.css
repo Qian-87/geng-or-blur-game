@@ -62,18 +62,38 @@ label{ font-weight:700; font-size:.9rem }
 .hud-item{ background:#fff; border-radius:14px; padding:.5rem .9rem; box-shadow:var(--shadow); font-weight:700 }
 .level-pill{ display:inline-block; background:var(--brand-2); color:#5a3d00; padding:.3rem .8rem; border-radius:999px; font-weight:900 }
 
-.grid{
-  display:grid;
+.grid {
+  display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap:14px;
+  gap: 14px;
+  max-width: 650px;        /* 限制总宽度 */
+  margin: 0 auto;          /* 居中 */
+  width: 100%;             /* 让它在小屏也能缩小 */
 }
-.tile{
-  background:#fff; border-radius:18px; box-shadow:var(--shadow); overflow:hidden;
-  position:relative; cursor:pointer; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
-  border:3px solid transparent; transition:.2s;
+.tile {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid transparent;
+  transition: 0.2s;
 }
+
 .tile:hover{ transform: translateY(-2px) }
-.tile img{ width:100%; height:100%; object-fit:cover; }
+.tile img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;   /* 关键！自动裁切填满 */
+  object-position: center; /* 居中裁切 */
+  display: block;
+}
 .tile.dev{ font-weight:900; font-size:1.6rem }
 
 .feedback{ min-height:28px; font-weight:800; margin:.5rem 0 }
@@ -106,7 +126,7 @@ label{ font-weight:700; font-size:.9rem }
 /* Target screen + compare + overlays */
 .target-wrap{ display:flex; justify-content:center; margin:18px 0 }
 .target-tile{
-  width:180px; height:180px; background:#fff; border-radius:22px;
+  width:450px; height:450px; background:#fff; border-radius:22px;
   box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center;
   font-weight:900; font-size:2rem; border:3px solid #ffe299;
 }
@@ -119,10 +139,10 @@ label{ font-weight:700; font-size:.9rem }
 .tile.wrong   .mark{ background:rgba(214,69,69,.78); opacity:1; }
 
 .compare{
-  display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin:14px 0 6px;
+  display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin:14px 0 6px;object-fit: cover;
 }
 .compare .small{
-  height:140px; border-radius:18px; background:#fff; box-shadow:var(--shadow);
+  height: 380px; border-radius:250px; background:#fff; box-shadow:var(--shadow);
   display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.4rem; border:3px solid #ffe299;
 }
 .compare-caption{ display:grid; grid-template-columns:1fr 1fr; gap:18px; font-weight:800; color:#6b5a12 }
@@ -187,3 +207,147 @@ label{ font-weight:700; font-size:.9rem }
 #final-screen.ranking-only .leaderboard-title {
   margin-top: 8px;
 }
+
+
+
+/* === Scrollable leaderboard (show all players) === */
+#leaderboard {
+  max-height: 550px;       /* 你可以改成 300px、500px 自己喜欢的高度 */
+  overflow-y: auto;        /* 垂直滚动条 */
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  background: #fff;
+  scrollbar-width: thin;   /* Firefox 的细滚动条 */
+}
+
+/* 美化滚动条（Chrome / Edge） */
+#leaderboard::-webkit-scrollbar {
+  width: 8px;
+}
+#leaderboard::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 4px;
+}
+#leaderboard::-webkit-scrollbar-thumb:hover {
+  background-color: #bbb;
+}
+
+#leaderboard {
+  padding-right: 6px; /* 让内容和滚动条之间留点空 */
+}
+
+
+/* === Fullscreen button === */
+#fullscreen-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: rgba(0,0,0,0.7);
+  color: rgb(255, 255, 255);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+#fullscreen-btn:hover {
+  background: rgba(80, 78, 85, 0.352);
+}
+
+.screen {
+  display: none;
+}
+
+.screen.visible {
+  display: block;
+}
+
+#start-screen .card {
+  margin-top: 18vh;   /* 可以改成 10vh、15vh 试试最顺眼的 */
+  transform: scale(1.2);  /* 整体放大 1.2 倍，可改为 1.1~1.4 之间看效果 */
+  transform-origin: center top; /* 让它从上方放大，不会偏移太多 */
+}
+
+
+
+#countdown-screen .card {
+  margin-top: 20vh;
+}
+
+/* === Instruction Screen (.howto) Styles === */
+#instruction-screen .card {
+  margin-top: 3vh;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  display: grid;
+  place-items: left;
+  padding: clamp(16px, 3vw, 32px);
+
+
+  h2 {
+  margin: 0 0 12px;
+  font-size: clamp(20px, 4vw, 32px);
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text);
+  }
+
+  width: min(820px, 92vw);
+  background: var(--card);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  padding: clamp(20px, 3vw, 32px);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,0.05);
+  text-align: left;
+
+  h3 {
+  margin: 18px 0 8px;
+  font-size: clamp(16px, 2.6vw, 22px);
+  color: var(--text);
+  }
+
+  h3 span {
+  vertical-align: middle;
+  }
+
+  p,li {
+  color: var(--text);
+  margin: 6px 0;
+  font-size: clamp(14px, 2.4vw, 18px);
+  line-height: 1.6;
+  }
+
+  ol,ul {
+  padding-left: 1.4em;
+  margin: 4px 0 16px;
+  }
+
+  strong {
+  font-weight: 800;
+  color: var(--brand);
+  }
+
+  small {
+  color: #6b5a12;}
+
+  :where(a, button, [tabindex]):focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 8px;
+  }
+}
+
+#instruction-screen p {
+  font-weight:bold;
+  text-align: center;
+}
+
+/* 让 “Got it!” 按钮在说明卡片中居中 */
+#instruction-screen .btn {
+  display: block;
+  margin: 20px auto 0;
+}
+

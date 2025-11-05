@@ -10,12 +10,12 @@ try {
   // Top 10（分数高优先，时长短优先，id稳定排序）
   $sqlTop = "SELECT id, name, total_score, total_duration_ms
              FROM scores
-             ORDER BY total_score DESC, total_duration_ms ASC, id ASC
-             LIMIT 10";
+             ORDER BY total_score DESC, total_duration_ms ASC, id ASC";
   $top = $pdo->query($sqlTop)->fetchAll(PDO::FETCH_ASSOC);
 
   // 查最新插入玩家
-  $me = null; $rank = null;
+  $me = null;
+  $rank = null;
   if ($latestId > 0) {
     $stmt = $pdo->prepare("SELECT id, name, total_score, total_duration_ms FROM scores WHERE id = ?");
     $stmt->execute([$latestId]);
@@ -57,7 +57,6 @@ try {
   }
 
   echo json_encode(['rows' => $rows, 'me' => $meOut], JSON_UNESCAPED_UNICODE);
-
 } catch (Exception $e) {
   http_response_code(500);
   echo json_encode(['error' => 'leaderboard query failed', 'detail' => $e->getMessage()]);
