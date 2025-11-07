@@ -3,54 +3,59 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// 显示错误（开发用）
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// 输出 JSON
-header('Content-Type: application/json');
-
-// 载入 PHPMailer
+// 引入 Composer 自动加载文件
 require __DIR__ . '/../vendor/autoload.php';
 
-// 检查文件上传
+header("Content-Type: application/json");
+
+// === 1️⃣ 检查文件上传 ===
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-    echo json_encode(["ok" => false, "error" => "No file uploaded"]);
+    echo json_encode(["ok" => false, "error" => "No file uploaded or upload error"]);
     exit;
 }
 
-$email = $_POST['email'];
-$name  = $_POST['name'];
-$score = $_POST['score'];
-$tmpPath = $_FILES['file']['tmp_name'];
-$fileName = $_FILES['file']['name'];
+// === 2️⃣ 检查 Email 参数 ===
+$email = $_POST['email'] ?? '';
+if (!$email) {
+    echo json_encode(["ok" => false, "error" => "Missing email address"]);
+    exit;
+}
 
+// === 3️⃣ 暂存上传的 PDF 文件 ===
+$tmpPath = $_FILES['file']['tmp_name'];
+$filename = $_FILES['file']['name'];
+
+// === 4️⃣ 设置邮件发送 ===
 $mail = new PHPMailer(true);
 
 try {
-    // Gmail SMTP 设置
+    // Gmail SMTP 服务器设置
     $mail->isSMTP();
     $mail->Host       = 'smtp.gmail.com';
     $mail->SMTPAuth   = true;
-    $mail->Username   = 'mmlm.utar@gmail.com'; // ✅ 你的完整Gmail
-    $mail->Password   = 'immvtamhqucgcmxc'; // ✅ Gmail App Password
+    $mail->Username   = 'mmlm.utar@gmail.com';  // 你的 Gmail
+    $mail->Password   = 'immvtamhqucgcmxc';  // 使用「应用专用密码」！
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = 587;
 
-    // 发件人 + 收件人
-    $mail->setFrom('mmlm.utar@gmail.com', 'Geng or Blur? Game');
-    $mail->addAddress($email, $name);
+    // 寄件与收件人
+    $mail->setFrom('mmlm.utar@gmail.com', 'Geng or Blur Game');
+    $mail->addAddress($email);
 
     // 邮件内容
-    $mail->isHTML(false);
-    $mail->Subject = 'Your Game Certificate';
-    $mail->Body    = "Hi $name,\n\nCongratulations! Here’s your certificate for Geng or Blur?\n\nScore: $score\n\nBest regards,\nThe Geng or Blur Team";
+    $mail->Subject = 'Flash Match Challenge Certificate';
+    $mail->isHTML(true);
+    $mail->Body = nl2br("Congratulations for the achievement! Thank you for playing Flash Match Challenge! Attached is your game achievement certificate.\n\n
+                    Best regards,
+                    Flash Match Challenge Team");
+    $mail->AltBody = "Your certificate is attached as a PDF file.";
 
-    // 附件
-    $mail->addAttachment($tmpPath, $fileName);
+    // 附件（PDF）
+    $mail->addAttachment($tmpPath, $filename);
 
-    // 发送
+    // 寄出邮件
     $mail->send();
+
     echo json_encode(["ok" => true]);
 } catch (Exception $e) {
     echo json_encode(["ok" => false, "error" => $mail->ErrorInfo]);

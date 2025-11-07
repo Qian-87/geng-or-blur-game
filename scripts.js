@@ -1,4 +1,4 @@
-// Geng or Blur? Web Game (v2 clean)
+// Flash Match Challenge Web Game
 
 const GAME_NAME = "Flash Match Challenge";
 const LEVELS = [
@@ -682,9 +682,9 @@ fullscreenBtn.addEventListener("click", () => {
 
 
 // Certificate
-downloadCertBtn.addEventListener("click", ()=>{
+downloadCertBtn.addEventListener("click", () => {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:"landscape", unit:"pt", format:"a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
@@ -695,69 +695,102 @@ downloadCertBtn.addEventListener("click", ()=>{
   doc.rect(24, 24, w - 48, h - 48);
 
   // Logo 设置
-  const logoPath = "logo/MMLM_logo.png"; // 你的logo路径
-  const logoWidth = 350;   // 可调整宽度
-  const logoHeight = 130;  // 可调整高度
-  const logoY = 65;        // 从顶部的距离（调大往下）
+  const logoPath = "logo/MMLM_logo.png"; // logo 路径
+  const logoWidth = 350;
+  const logoHeight = 130;
+  const logoY = 65;
 
   // 加载图片（异步）
   const img = new Image();
   img.src = logoPath;
-  img.onload = function() {
+  img.onload = function () {
     const logoX = (w - logoWidth) / 2;
     doc.addImage(img, "PNG", logoX, logoY, logoWidth, logoHeight);
 
     // 所有文字整体往下移
-    const yOffset = logoHeight + 5; // 文字起始位置 = logo 底部往下 30px
+    const yOffset = logoHeight + 5;
 
-    doc.setTextColor(255,140,0);
-    doc.setFont("helvetica","bold");
+    doc.setTextColor(255, 140, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(30);
-    doc.text(GAME_NAME, w/2, 120 + yOffset, {align:"center"});
+    doc.text(GAME_NAME, w / 2, 120 + yOffset, { align: "center" });
 
-    doc.setTextColor(0,0,0);
-    doc.setFont("times","italic bold");
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("times", "italic bold");
     doc.setFontSize(36);
-    doc.text("Certificate of Achievement", w/2, 180 + yOffset, {align:"center"});
+    doc.text("Certificate of Achievement", w / 2, 180 + yOffset, { align: "center" });
 
-    doc.setTextColor(0,0,0);
-    doc.setFont("helvetica","normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(18);
-    doc.text(`This certificate is awarded to`, w/2, 220 + yOffset, {align:"center"});
+    doc.text(`This certificate is awarded to`, w / 2, 220 + yOffset, { align: "center" });
 
-    doc.setTextColor(36,36,36);
-    doc.setFont("helvetica","bold");
+    doc.setTextColor(36, 36, 36);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(30);
-    doc.text(state.player.name || "Player", w/2, 270 + yOffset, {align:"center"});
+    doc.text(state.player.name || "Player", w / 2, 270 + yOffset, { align: "center" });
 
-    // 加一条实线
-  doc.setDrawColor(0, 0, 0);   // 黑色线条
-  doc.setLineWidth(0.8);       // 线条粗细，可调
-  doc.line(w * 0.25, 280 + yOffset, w * 0.75, 280 + yOffset); // 从 25% 到 75% 宽度画水平线
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.8);
+    doc.line(w * 0.25, 280 + yOffset, w * 0.75, 280 + yOffset);
 
     const acc = Math.round((state.correctCount / state.totalQuestions) * 100);
-    doc.setTextColor(0,0,0);
-    doc.setFont("helvetica","normal");
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(16);
-    doc.text(`with the following results:`, w/2, 300 + yOffset, {align:"center"});
+    doc.text(`with the following results:`, w / 2, 300 + yOffset, { align: "center" });
 
-    doc.setFont("helvetica","bold");
-    doc.text(`Score: ${state.score}             Duration: ${msToClock(state.totalDurationMs)}`, w/2, 340 + yOffset, {align:"center"});
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `Score: ${state.score}             Duration: ${msToClock(state.totalDurationMs)}`,
+      w / 2,
+      340 + yOffset,
+      { align: "center" }
+    );
 
     const dateStr = new Date().toLocaleDateString();
-    doc.setFont("helvetica","normal");
-    doc.text(`Date: ${dateStr}`, w/2, 390 + yOffset, {align:"center"});
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${dateStr}`, w / 2, 390 + yOffset, { align: "center" });
 
+    // 保存 PDF 到本地（可选）
+    const fileName = `Certificate_${state.player.name || "player"}.pdf`;
+    doc.save(fileName);
 
+    // 生成 Blob 上传给后端
+    const pdfBlob = doc.output("blob");
 
-    // 保存PDF
-    doc.save(`Certificate_${state.player.name || "player"}.pdf`);
-  };
+    // ⚠️ 确保 email 存在
+    if (!state.player.email) {
+      alert("⚠️ 未找到玩家邮箱，无法寄送证书。");
+      return;
+    }
 
-  img.onerror = function() {
-    alert("⚠️ 无法加载 logo，请检查路径是否正确: " + logoPath);
+    const formData = new FormData();
+    formData.append("file", pdfBlob, fileName);
+    formData.append("email", state.player.email);
+
+    fetch("api/send_cert.php", {
+      method: "POST",
+      body: formData
+    })
+      .then(async (res) => {
+        let text = await res.text(); // 安全读取（防止 HTML 错误）
+        try {
+          const data = JSON.parse(text);
+          if (data.ok) {
+            alert("✅ 证书已成功寄出到 " + state.player.email);
+          } else {
+            alert("❌ 无法寄出证书: " + (data.error || "未知错误"));
+          }
+        } catch (e) {
+          alert("⚠️ 服务器返回格式错误:\n" + text);
+        }
+      })
+      .catch((err) => {
+        alert("⚠️ 上传失败: " + err.message);
+      });
   };
 });
+
 
 
 playAgainBtn.addEventListener("click", ()=>{
