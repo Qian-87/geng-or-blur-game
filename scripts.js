@@ -1,4 +1,4 @@
-// Flash Match Challenge Web Game
+// Geng or Blur? Web Game (v2 clean)
 
 const GAME_NAME = "Flash Match Challenge";
 const LEVELS = [
@@ -110,9 +110,6 @@ const mysNextBtn  = document.getElementById("mys-next");
 // 🟢 Instruction screen elements
 const instrNextBtn = document.getElementById("instr-next");
 const instrNameEl  = document.getElementById("instr-player-name");
-// 小蓝字 DOM（你已经在 HTML 插了 email-hint / allow-other）
-const hintWrap      = document.getElementById("email-hint");
-const allowOtherBtn = document.getElementById("allow-other");
 
 
 
@@ -155,6 +152,7 @@ function msToClock(ms){
 // Start
 // ===== Frontend gatekeeping =====
 const NAME_RE   = /^[A-Za-z ]{1,32}$/;
+const gmailRegex = /^[^\s@]+@[^\s@]+\.[a-z]{2,}(\.[a-z]{2,})?$/;
 
 const formErrorEl = document.getElementById("form-error");
 const startBtnEl  = document.getElementById("start-btn");
@@ -178,76 +176,23 @@ function sanitizeName(raw) {
     .replace(/\s{2,}/g, " ")     // 多空格合并为单空格
 }
 
+function validateEmailStrong(email) {
+  if (!email.trim()) {
+    return { ok: false, msg: "Please enter your email address." };
+  }
 
+  // 检查格式
+  if (!gmailRegex.test(email)) {
+    return { ok: false, msg: "Invalid email format." };
+  }
+
+  // 符合格式就通过
+  return { ok: true };
+}
 
 // ===== Hook inputs for instant feedback =====
 const nameInput  = document.getElementById("player-name");
 const emailInput = document.getElementById("player-email");
-
-
-
-// === 公共域名白名单 + 小蓝字解锁 ===
-const PUBLIC_DOMAINS = new Set([
-  "gmail.com","googlemail.com","yahoo.com","yahoo.com.my","ymail.com",
-  "outlook.com","hotmail.com","live.com","msn.com","icloud.com","me.com",
-  "proton.me","protonmail.com","aol.com","zoho.com","mail.com","gmx.com"
-]);
-const COMMON_MISTYPES = {
-  "gmial.com":"gmail.com","gamil.com":"gmail.com",
-  "hotnail.com":"hotmail.com","hotmai.com":"hotmail.com",
-  "outllok.com":"outlook.com","yahho.com":"yahoo.com"
-};
-
-let allowOtherDomains = false;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-
-function getDomain(v){
-  const at = v.lastIndexOf("@");
-  return at > -1 ? v.slice(at+1).toLowerCase().trim() : "";
-}
-function autocorrectMistype(email){
-  const d = getDomain(email);
-  return COMMON_MISTYPES[d] ? email.replace(d, COMMON_MISTYPES[d]) : email;
-}
-
-// 合并你的旧监听：即时纠错 + 校验 + 清错误
-emailInput.addEventListener("input", ()=>{
-  const fixed = autocorrectMistype(emailInput.value.trim());
-  if (fixed !== emailInput.value) emailInput.value = fixed;
-  clearFormError();
-  validateEmail();
-});
-
-// 点击小蓝字→允许任意合法域名
-if (allowOtherBtn) {
-  allowOtherBtn.addEventListener("click", ()=>{
-    allowOtherDomains = true;
-    hintWrap?.classList.add("hidden");
-    validateEmail();
-  });
-}
-
-// 控制按钮状态 & 提示的核心函数
-function validateEmail(){
-  const v = emailInput.value.trim();
-  const okFormat = emailRegex.test(v);
-  const domain   = getDomain(v);
-
-  let ok=false, needHint=false;
-  if (!okFormat) ok=false;
-  else if (allowOtherDomains) ok=true;
-  else { ok = PUBLIC_DOMAINS.has(domain); needHint = !ok; }
-
-  hintWrap?.classList.toggle("hidden", !needHint);
-  emailInput.classList.toggle("input-error", !ok && v.length>0);
-  startBtnEl.disabled = !ok;
-  return ok;
-}
-
-// 初始禁用，防止未校验就提交；并触发一次校验（应对浏览器自动填充）
-startBtnEl.disabled = true;
-setTimeout(validateEmail, 0);
-
 
 nameInput.addEventListener("input", () => {
   const sanitized = sanitizeName(nameInput.value);
@@ -259,6 +204,9 @@ nameInput.addEventListener("input", () => {
   }
 });
 
+emailInput.addEventListener("input", () => {
+  clearFormError();
+});
 
 // ===== Submit gate =====
 playerForm.addEventListener("submit", async (e) => {
@@ -279,13 +227,19 @@ playerForm.addEventListener("submit", async (e) => {
     nameInput.focus();
     return;
   }
-// 新的 —— 使用 validateEmail()
-if (!validateEmail()) {
-  showFormError("请输入公共邮箱或点击上方蓝字允许学校/公司邮箱。");
-  emailInput.focus();
-  return;
-}
 
+  const emailCheck = validateEmailStrong(email);
+  if (!emailCheck.ok) {
+    showFormError(emailCheck.msg);
+    emailInput.focus();
+    return;
+  }
+  if (emailCheck.warn) {
+    // 温柔提醒，不拦截
+    showFormError(emailCheck.warn);
+    // 5 秒后自动清掉提示，继续走流程
+    setTimeout(clearFormError, 5000);
+  }
 
   // disable 连点
   startBtnEl.disabled = true;
@@ -496,12 +450,10 @@ const timeUsed = Math.round((performance.now() - state.questionStartTs) / 1000);
 const detailText = `
   ${isCorrect ? "You picked the right image!" : "Correct image shown on the left. Your choice on the right."}
   <br><br>
-<span style="margin-right: 65px;"><strong>Time Used:</strong> ${timeUsed}s</span>
-<strong>Score:</strong> ${state.lastDelta >= 0 ? "+" + state.lastDelta : state.lastDelta} <br>
-<span style="margin-right: 40px;"><strong>Time Left:</strong> ${secsLeft}s</span>
-<strong>Total Score:</strong> ${state.score}<br>
-  
-
+  <strong>Time Used:</strong> ${timeUsed}s <br>
+  <strong>Time Left:</strong> ${secsLeft}s <br>
+  <strong>Score:</strong> ${state.lastDelta >= 0 ? "+" + state.lastDelta : state.lastDelta} <br>
+  <strong>Total Score:</strong> ${state.score}<br>
 `;
   if(state.devMode){
     const yourSymbol = (pick === correct) ? "⭐" : "•";
@@ -728,9 +680,9 @@ fullscreenBtn.addEventListener("click", () => {
 
 
 // Certificate
-downloadCertBtn.addEventListener("click", () => {
+downloadCertBtn.addEventListener("click", ()=>{
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  const doc = new jsPDF({ orientation:"landscape", unit:"pt", format:"a4" });
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
@@ -741,102 +693,69 @@ downloadCertBtn.addEventListener("click", () => {
   doc.rect(24, 24, w - 48, h - 48);
 
   // Logo 设置
-  const logoPath = "logo/MMLM_logo.png"; // logo 路径
-  const logoWidth = 350;
-  const logoHeight = 130;
-  const logoY = 65;
+  const logoPath = "logo/MMLM_logo.png"; // 你的logo路径
+  const logoWidth = 350;   // 可调整宽度
+  const logoHeight = 130;  // 可调整高度
+  const logoY = 65;        // 从顶部的距离（调大往下）
 
   // 加载图片（异步）
   const img = new Image();
   img.src = logoPath;
-  img.onload = function () {
+  img.onload = function() {
     const logoX = (w - logoWidth) / 2;
     doc.addImage(img, "PNG", logoX, logoY, logoWidth, logoHeight);
 
     // 所有文字整体往下移
-    const yOffset = logoHeight + 5;
+    const yOffset = logoHeight + 5; // 文字起始位置 = logo 底部往下 30px
 
-    doc.setTextColor(255, 140, 0);
-    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255,140,0);
+    doc.setFont("helvetica","bold");
     doc.setFontSize(30);
-    doc.text(GAME_NAME, w / 2, 120 + yOffset, { align: "center" });
+    doc.text(GAME_NAME, w/2, 120 + yOffset, {align:"center"});
 
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("times", "italic bold");
+    doc.setTextColor(0,0,0);
+    doc.setFont("times","italic bold");
     doc.setFontSize(36);
-    doc.text("Certificate of Achievement", w / 2, 180 + yOffset, { align: "center" });
+    doc.text("Certificate of Achievement", w/2, 180 + yOffset, {align:"center"});
 
-    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0,0,0);
+    doc.setFont("helvetica","normal");
     doc.setFontSize(18);
-    doc.text(`This certificate is awarded to`, w / 2, 220 + yOffset, { align: "center" });
+    doc.text(`This certificate is awarded to`, w/2, 220 + yOffset, {align:"center"});
 
-    doc.setTextColor(36, 36, 36);
-    doc.setFont("helvetica", "bold");
+    doc.setTextColor(36,36,36);
+    doc.setFont("helvetica","bold");
     doc.setFontSize(30);
-    doc.text(state.player.name || "Player", w / 2, 270 + yOffset, { align: "center" });
+    doc.text(state.player.name || "Player", w/2, 270 + yOffset, {align:"center"});
 
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.8);
-    doc.line(w * 0.25, 280 + yOffset, w * 0.75, 280 + yOffset);
+    // 加一条实线
+  doc.setDrawColor(0, 0, 0);   // 黑色线条
+  doc.setLineWidth(0.8);       // 线条粗细，可调
+  doc.line(w * 0.25, 280 + yOffset, w * 0.75, 280 + yOffset); // 从 25% 到 75% 宽度画水平线
 
     const acc = Math.round((state.correctCount / state.totalQuestions) * 100);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0,0,0);
+    doc.setFont("helvetica","normal");
     doc.setFontSize(16);
-    doc.text(`with the following results:`, w / 2, 300 + yOffset, { align: "center" });
+    doc.text(`with the following results:`, w/2, 300 + yOffset, {align:"center"});
 
-    doc.setFont("helvetica", "bold");
-    doc.text(
-      `Score: ${state.score}             Duration: ${msToClock(state.totalDurationMs)}`,
-      w / 2,
-      340 + yOffset,
-      { align: "center" }
-    );
+    doc.setFont("helvetica","bold");
+    doc.text(`Score: ${state.score}       Duration: ${msToClock(state.totalDurationMs)}       Accuracy: ${acc}%`, w/2, 340 + yOffset, {align:"center"});
 
     const dateStr = new Date().toLocaleDateString();
-    doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${dateStr}`, w / 2, 390 + yOffset, { align: "center" });
+    doc.setFont("helvetica","normal");
+    doc.text(`Date: ${dateStr}`, w/2, 390 + yOffset, {align:"center"});
 
-    // 保存 PDF 到本地（可选）
-    const fileName = `Certificate_${state.player.name || "player"}.pdf`;
-    doc.save(fileName);
 
-    // 生成 Blob 上传给后端
-    const pdfBlob = doc.output("blob");
 
-    // ⚠️ 确保 email 存在
-    if (!state.player.email) {
-      alert("⚠️ 未找到玩家邮箱，无法寄送证书。");
-      return;
-    }
+    // 保存PDF
+    doc.save(`Certificate_${state.player.name || "player"}.pdf`);
+  };
 
-    const formData = new FormData();
-    formData.append("file", pdfBlob, fileName);
-    formData.append("email", state.player.email);
-
-    fetch("api/send_cert.php", {
-      method: "POST",
-      body: formData
-    })
-      .then(async (res) => {
-        let text = await res.text(); // 安全读取（防止 HTML 错误）
-        try {
-          const data = JSON.parse(text);
-          if (data.ok) {
-            alert("✅ 证书已成功寄出到 " + state.player.email);
-          } else {
-            alert("❌ 无法寄出证书: " + (data.error || "未知错误"));
-          }
-        } catch (e) {
-          alert("⚠️ 服务器返回格式错误:\n" + text);
-        }
-      })
-      .catch((err) => {
-        alert("⚠️ 上传失败: " + err.message);
-      });
+  img.onerror = function() {
+    alert("⚠️ 无法加载 logo，请检查路径是否正确: " + logoPath);
   };
 });
-
 
 
 playAgainBtn.addEventListener("click", ()=>{
