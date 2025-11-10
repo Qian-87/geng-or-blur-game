@@ -32,6 +32,14 @@
                title="Please enter a valid email address, e.g. name@example.com" />
       </div>
 
+      <!-- 👇 小蓝字提示区（默认隐藏） -->
+      <div id="email-hint" class="hint hidden" role="alert" aria-live="polite">
+      A non-public email domain was detected.
+        <button id="allow-other" class="hint-link" type="button">
+         Use your school/company email address (other domains are allowed).
+        </button>
+      </div>
+
       <!-- 错误提示容器（JS 会写这里） -->
       <p id="form-error" class="form-error"
          style="display:none;color:#c0392b;margin:8px 0 0 2px;"></p>

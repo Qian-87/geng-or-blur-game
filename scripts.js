@@ -110,6 +110,9 @@ const mysNextBtn  = document.getElementById("mys-next");
 // 🟢 Instruction screen elements
 const instrNextBtn = document.getElementById("instr-next");
 const instrNameEl  = document.getElementById("instr-player-name");
+// 小蓝字 DOM（你已经在 HTML 插了 email-hint / allow-other）
+const hintWrap      = document.getElementById("email-hint");
+const allowOtherBtn = document.getElementById("allow-other");
 
 
 
@@ -152,7 +155,6 @@ function msToClock(ms){
 // Start
 // ===== Frontend gatekeeping =====
 const NAME_RE   = /^[A-Za-z ]{1,32}$/;
-const gmailRegex = /^[^\s@]+@[^\s@]+\.[a-z]{2,}(\.[a-z]{2,})?$/;
 
 const formErrorEl = document.getElementById("form-error");
 const startBtnEl  = document.getElementById("start-btn");
@@ -176,23 +178,76 @@ function sanitizeName(raw) {
     .replace(/\s{2,}/g, " ")     // 多空格合并为单空格
 }
 
-function validateEmailStrong(email) {
-  if (!email.trim()) {
-    return { ok: false, msg: "Please enter your email address." };
-  }
 
-  // 检查格式
-  if (!gmailRegex.test(email)) {
-    return { ok: false, msg: "Invalid email format." };
-  }
-
-  // 符合格式就通过
-  return { ok: true };
-}
 
 // ===== Hook inputs for instant feedback =====
 const nameInput  = document.getElementById("player-name");
 const emailInput = document.getElementById("player-email");
+
+
+
+// === 公共域名白名单 + 小蓝字解锁 ===
+const PUBLIC_DOMAINS = new Set([
+  "gmail.com","googlemail.com","yahoo.com","yahoo.com.my","ymail.com",
+  "outlook.com","hotmail.com","live.com","msn.com","icloud.com","me.com",
+  "proton.me","protonmail.com","aol.com","zoho.com","mail.com","gmx.com"
+]);
+const COMMON_MISTYPES = {
+  "gmial.com":"gmail.com","gamil.com":"gmail.com",
+  "hotnail.com":"hotmail.com","hotmai.com":"hotmail.com",
+  "outllok.com":"outlook.com","yahho.com":"yahoo.com"
+};
+
+let allowOtherDomains = false;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
+function getDomain(v){
+  const at = v.lastIndexOf("@");
+  return at > -1 ? v.slice(at+1).toLowerCase().trim() : "";
+}
+function autocorrectMistype(email){
+  const d = getDomain(email);
+  return COMMON_MISTYPES[d] ? email.replace(d, COMMON_MISTYPES[d]) : email;
+}
+
+// 合并你的旧监听：即时纠错 + 校验 + 清错误
+emailInput.addEventListener("input", ()=>{
+  const fixed = autocorrectMistype(emailInput.value.trim());
+  if (fixed !== emailInput.value) emailInput.value = fixed;
+  clearFormError();
+  validateEmail();
+});
+
+// 点击小蓝字→允许任意合法域名
+if (allowOtherBtn) {
+  allowOtherBtn.addEventListener("click", ()=>{
+    allowOtherDomains = true;
+    hintWrap?.classList.add("hidden");
+    validateEmail();
+  });
+}
+
+// 控制按钮状态 & 提示的核心函数
+function validateEmail(){
+  const v = emailInput.value.trim();
+  const okFormat = emailRegex.test(v);
+  const domain   = getDomain(v);
+
+  let ok=false, needHint=false;
+  if (!okFormat) ok=false;
+  else if (allowOtherDomains) ok=true;
+  else { ok = PUBLIC_DOMAINS.has(domain); needHint = !ok; }
+
+  hintWrap?.classList.toggle("hidden", !needHint);
+  emailInput.classList.toggle("input-error", !ok && v.length>0);
+  startBtnEl.disabled = !ok;
+  return ok;
+}
+
+// 初始禁用，防止未校验就提交；并触发一次校验（应对浏览器自动填充）
+startBtnEl.disabled = true;
+setTimeout(validateEmail, 0);
+
 
 nameInput.addEventListener("input", () => {
   const sanitized = sanitizeName(nameInput.value);
@@ -204,9 +259,6 @@ nameInput.addEventListener("input", () => {
   }
 });
 
-emailInput.addEventListener("input", () => {
-  clearFormError();
-});
 
 // ===== Submit gate =====
 playerForm.addEventListener("submit", async (e) => {
@@ -227,19 +279,13 @@ playerForm.addEventListener("submit", async (e) => {
     nameInput.focus();
     return;
   }
+// 新的 —— 使用 validateEmail()
+if (!validateEmail()) {
+  showFormError("请输入公共邮箱或点击上方蓝字允许学校/公司邮箱。");
+  emailInput.focus();
+  return;
+}
 
-  const emailCheck = validateEmailStrong(email);
-  if (!emailCheck.ok) {
-    showFormError(emailCheck.msg);
-    emailInput.focus();
-    return;
-  }
-  if (emailCheck.warn) {
-    // 温柔提醒，不拦截
-    showFormError(emailCheck.warn);
-    // 5 秒后自动清掉提示，继续走流程
-    setTimeout(clearFormError, 5000);
-  }
 
   // disable 连点
   startBtnEl.disabled = true;

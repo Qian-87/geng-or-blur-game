@@ -351,3 +351,8 @@ label{ font-weight:700; font-size:.9rem }
   margin: 20px auto 0;
 }
 
+.hint{margin:6px 0 12px;font-size:12px;color:#1e88e5}
+.hint.hidden{display:none}
+.hint-link{padding:0;border:0;background:none;color:#1e88e5;text-decoration:underline;cursor:pointer;font:inherit}
+.input-error{border-color:#e53935 !important;box-shadow:0 0 0 2px rgba(229,57,53,.15)}
+/* 小蓝字提示区样式 */
