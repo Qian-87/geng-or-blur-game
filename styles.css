@@ -142,7 +142,7 @@ label{ font-weight:700; font-size:.9rem }
   display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin:14px 0 6px;object-fit: cover;
 }
 .compare .small{
-  height: 380px; border-radius:250px; background:#fff; box-shadow:var(--shadow);
+  height: 400px; border-radius:250px; background:#fff; box-shadow:var(--shadow);
   display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.4rem; border:3px solid #ffe299;
 }
 .compare-caption{ display:grid; grid-template-columns:1fr 1fr; gap:18px; font-weight:800; color:#6b5a12 }
@@ -351,3 +351,8 @@ label{ font-weight:700; font-size:.9rem }
   margin: 20px auto 0;
 }
 
+.hint{margin:6px 0 12px;font-size:12px;color:#1e88e5}
+.hint.hidden{display:none}
+.hint-link{padding:0;border:0;background:none;color:#1e88e5;text-decoration:underline;cursor:pointer;font:inherit}
+.input-error{border-color:#e53935 !important;box-shadow:0 0 0 2px rgba(229,57,53,.15)}
+/* 小蓝字提示区样式 */
