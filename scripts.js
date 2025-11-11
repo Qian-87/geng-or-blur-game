@@ -20,6 +20,15 @@ const THEME_DIR = {
   "Art": "art",
 };
 
+// ✅ 新增在这里（不要动上面三行）
+const THEME_SET_COUNTS = {
+  "Black & White": { easy: 3, medium: 3, hard: 3 }, // ← 改成你素材真实数量
+  "Colour":        { easy: 5, medium: 3, hard: 3 },
+  "Food":          { easy: 5, medium: 3, hard: 3 },
+  "Logo":          { easy: 5, medium: 3, hard: 3 },
+  "Art":           { easy: 5, medium: 3, hard: 3 },
+};
+
 // 路径辅助：主题名 → 文件夹名
 function themeDirName(themeDisplay){
   return THEME_DIR[themeDisplay] || themeDisplay.toLowerCase().replace(/\s+/g,'_');
@@ -48,9 +57,52 @@ function createAssetImg(theme, difficulty, setId, idx0to8, alt){
   return img;
 }
 //Testing Use Only_Finish putting imgs const READY_THEMES = ["Colour"]; need to be cmd
-const READY_THEMES = ["Black & White","Colour","Food","Logo","Art"]; // 有哪个就填哪个，比如 ["Colour","Logo"]
+const READY_THEMES = ["Black & White","Art","Logo","Food","Colour"]; // 有哪个就填哪个，比如 ["Colour","Logo","Black & White"]
 // 随机选定本题参数（主题/难度/组号/正确索引）
+
+// ✅ 测试开关：true = 只测指定主题/难度/set，false = 恢复随机
+/*
+const TEST_ONE_SET = False;                 // 测完改 false
+const TEST_SET_BY_DIFF = {                 // ← 改成你要测的 set 编号
+  easy:   5,   // Rookie 用 set1
+  medium: 1,   // Elite  用 set2
+  hard:   2    // Insane 用 set3 
+};
+*/
+
 function pickRoundParams(){
+  // --- Test Only(Use to test specific theme and set) ---
+  /*
+    if (TEST_ONE_SET) {
+    // 主题固定黑白（要是你没锁 READY_THEMES，这里也强制一下）
+    state.theme = "Art";
+
+    // 难度仍按关卡映射：rookie→easy, elite→medium, insane→hard
+    const lvlKey = LEVELS[state.levelIndex].key;
+    state.difficulty = DIFF_BY_LEVEL[lvlKey];
+
+    // 每个难度用你上面指定好的 set
+    state.setId = TEST_SET_BY_DIFF[state.difficulty] ?? 1;
+
+    // 正确格子随便给个随机
+    state.correctIndex = Math.floor(Math.random() * 9);
+
+    themeNameEl.textContent = state.theme;
+    return; // 结束，后面随机逻辑不走
+  }
+    */
+  
+  /*
+  // --- Test for single set and theme only---  
+  if (TEST_ONE_SET) {
+    state.theme        = "Colour"; // 想测的主题
+    state.difficulty   = "medium";   // easy / medium / hard 三选一
+    state.setId        = 1;        // 想测第几组 set
+    state.correctIndex = Math.floor(Math.random() * 9);
+    return;                       // 直接结束，后面随机逻辑不执行
+  } 
+    */
+
   // ✅ 用 READY_THEMES 而不是 THEMES
   const pool = READY_THEMES.length ? READY_THEMES : THEMES;
 
@@ -62,9 +114,12 @@ function pickRoundParams(){
   const lvlKey = LEVELS[state.levelIndex].key; // rookie/elite/insane
   state.difficulty = DIFF_BY_LEVEL[lvlKey];    // easy/medium/hard
 
-  // 随机 setX
-  const maxSet = SET_COUNTS[state.difficulty];
-  state.setId = Math.floor(Math.random() * maxSet) + 1;
+ // 新的（用主题优先，否则退回全局 SET_COUNTS）
+ const themeCounts = THEME_SET_COUNTS[state.theme] || {};
+ const maxSet = themeCounts[state.difficulty] ?? SET_COUNTS[state.difficulty];
+ state.setId = Math.floor(Math.random() * maxSet) + 1;
+ console.log(`[round] theme=${state.theme} diff=${state.difficulty} set=${state.setId}`);
+
 
   // 在 0..8 中选一个正确格子
   state.correctIndex = Math.floor(Math.random() * 9);
