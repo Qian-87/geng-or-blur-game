@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: geng-or-blur-game
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true

@@ -44,6 +44,28 @@ function buildImgSrc(theme, difficulty, setId, idx0to8){
   };
 }
 
+// === PRELOAD: 先把一轮的9张图全部拉到本地 ===
+function loadImageOnce(src){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload  = () => resolve(true);   // 下载+解码OK
+    img.onerror = () => resolve(false);  // 失败也放行，避免卡住
+    img.src = src;
+    // 有 decode() 的浏览器更稳（减少短暂空白）
+    if (img.decode) img.decode().catch(()=>{});
+  });
+}
+
+async function preloadRoundAssets(theme, difficulty, setId){
+  const jobs = [];
+  for (let i = 0; i < 9; i++){
+    const { png, jpg } = buildImgSrc(theme, difficulty, setId, i);
+    jobs.push(loadImageOnce(png).then(ok => ok ? true : loadImageOnce(jpg)));
+  }
+  await Promise.all(jobs); // 等9张都处理完（到/失败都算完）
+}
+
+
 // 创建 <img> 元素，优先 .png，404 再回退 .jpg
 function createAssetImg(theme, difficulty, setId, idx0to8, alt){
   const { png, jpg } = buildImgSrc(theme, difficulty, setId, idx0to8);
@@ -57,7 +79,11 @@ function createAssetImg(theme, difficulty, setId, idx0to8, alt){
   return img;
 }
 //Testing Use Only_Finish putting imgs const READY_THEMES = ["Colour"]; need to be cmd
+<<<<<<< HEAD
 const READY_THEMES = ["Black & White","Art","Logo","Food","Colour"]; // 有哪个就填哪个，比如 ["Colour","Logo","Black & White"]
+=======
+const READY_THEMES = ["Black & White","Art"]; // 有哪个就填哪个，比如 ["Colour","Logo","Black & White"]
+>>>>>>> ea5acca33a649c91b40ed5632a619ef82ab055e7
 // 随机选定本题参数（主题/难度/组号/正确索引）
 
 // ✅ 测试开关：true = 只测指定主题/难度/set，false = 恢复随机
@@ -396,18 +422,28 @@ instrNextBtn.addEventListener("click", () => {
      600); 
     }
 
-function prepareTargetAndShow(){
-  // 设置本题的主题、难度、组号、正确答案索引
-  pickRoundParams();      
+async function prepareTargetAndShow(){
+  // 先确定本题参数（主题/难度/set/正确格）
+  pickRoundParams();
 
-  // 显示目标图（根据 devMode = ⭐，否则用真实图片）
-  renderTargetPreview();  
+  // 清掉上一题的 DOM，避免“迟到图”插进来
+  gridEl.innerHTML = "";
+  targetPreview.innerHTML = "";
 
-  // 切换到“Find This!”画面
+  // ⭐关键：预加载本轮9张图（解决答案先出、干扰图后到/空白）
+  await preloadRoundAssets(state.theme, state.difficulty, state.setId);
+
+  // 图片都准备好了，再渲染预览与切屏
+  renderTargetPreview();
   showScreen("target");
 
+<<<<<<< HEAD
   // ✅ 停 2 秒后自动进入九宫格
   setTimeout(()=> startQuestionRound(), 2500);
+=======
+  // 给布局一点缓冲，再进九宫格
+  setTimeout(()=> startQuestionRound(), 2700);
+>>>>>>> ea5acca33a649c91b40ed5632a619ef82ab055e7
 }
 
 function renderTargetPreview(){
