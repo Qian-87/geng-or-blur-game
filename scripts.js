@@ -390,7 +390,7 @@ instrNextBtn.addEventListener("click", () => {
         if(c===1) s1.classList.add("show"); 
         if(c===0){ go.classList.add("show"); 
         clearInterval(seq); 
-        setTimeout(()=>prepareTargetAndShow(), 600);
+        setTimeout(()=>prepareTargetAndShow(), 1000);
      } 
      c--; }, 
      600); 
@@ -407,7 +407,7 @@ function prepareTargetAndShow(){
   showScreen("target");
 
   // ✅ 停 2 秒后自动进入九宫格
-  setTimeout(()=> startQuestionRound(), 2000);
+  setTimeout(()=> startQuestionRound(), 2500);
 }
 
 function renderTargetPreview(){
@@ -861,7 +861,7 @@ downloadCertBtn.addEventListener("click", () => {
 
     // ⚠️ 确保 email 存在
     if (!state.player.email) {
-      alert("⚠️ 未找到玩家邮箱，无法寄送证书。");
+      alert("⚠️ Player email not found. Unable to send the certificate.");
       return;
     }
 
@@ -878,16 +878,16 @@ downloadCertBtn.addEventListener("click", () => {
         try {
           const data = JSON.parse(text);
           if (data.ok) {
-            alert("✅ 证书已成功寄出到 " + state.player.email);
+            alert("✅ The certificate has been successfully sent to " + state.player.email);
           } else {
-            alert("❌ 无法寄出证书: " + (data.error || "未知错误"));
+            alert("❌ Failed to send the certificate:  " + (data.error || "未知错误"));
           }
         } catch (e) {
-          alert("⚠️ 服务器返回格式错误:\n" + text);
+          alert("⚠️ The server returned an invalid format:\n" + text);
         }
       })
       .catch((err) => {
-        alert("⚠️ 上传失败: " + err.message);
+        alert("⚠️ Uploading Failed: " + err.message);
       });
   };
 });
