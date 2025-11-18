@@ -79,25 +79,25 @@ function createAssetImg(theme, difficulty, setId, idx0to8, alt){
   return img;
 }
 //Testing Use Only_Finish putting imgs const READY_THEMES = ["Colour"]; need to be cmd
-const READY_THEMES = ["Black & White","Art"]; // 有哪个就填哪个，比如 ["Colour","Logo","Black & White"]
+const READY_THEMES = ["Black & White","Colour","Food","Logo","Art"]; // 有哪个就填哪个，比如 ["Colour","Logo","Black & White"]
 // 随机选定本题参数（主题/难度/组号/正确索引）
 
 // ✅ 测试开关：true = 只测指定主题/难度/set，false = 恢复随机
-/*
-const TEST_ONE_SET = False;                 // 测完改 false
+
+/*const TEST_ONE_SET = true;                 // 测完改 false
 const TEST_SET_BY_DIFF = {                 // ← 改成你要测的 set 编号
-  easy:   5,   // Rookie 用 set1
+  easy:   4,   // Rookie 用 set1
   medium: 1,   // Elite  用 set2
-  hard:   2    // Insane 用 set3 
+  hard:   3    // Insane 用 set3 
 };
 */
 
 function pickRoundParams(){
-  // --- Test Only(Use to test specific theme and set) ---
-  /*
+ /* // --- Test Only(Use to test specific theme and set) ---
+  
     if (TEST_ONE_SET) {
     // 主题固定黑白（要是你没锁 READY_THEMES，这里也强制一下）
-    state.theme = "Art";
+    state.theme = "Logo";
 
     // 难度仍按关卡映射：rookie→easy, elite→medium, insane→hard
     const lvlKey = LEVELS[state.levelIndex].key;
@@ -112,7 +112,7 @@ function pickRoundParams(){
     themeNameEl.textContent = state.theme;
     return; // 结束，后面随机逻辑不走
   }
-    */
+    *
   
   /*
   // --- Test for single set and theme only---  
@@ -288,11 +288,16 @@ function autocorrectMistype(email){
 }
 
 // 合并你的旧监听：即时纠错 + 校验 + 清错误
-emailInput.addEventListener("input", ()=>{
-  const fixed = autocorrectMistype(emailInput.value.trim());
-  if (fixed !== emailInput.value) emailInput.value = fixed;
-  clearFormError();
-  validateEmail();
+emailInput.addEventListener("input", () => {
+  const raw   = emailInput.value.trim();
+  const fixed = autocorrectMistype(raw);
+
+  if (fixed !== emailInput.value) {
+    emailInput.value = fixed;
+  }
+
+  // 这里只负责蓝字/红边，不显示或清除错误信息
+  validateEmail(false);
 });
 
 // 点击小蓝字→允许任意合法域名
@@ -305,36 +310,87 @@ if (allowOtherBtn) {
 }
 
 // 控制按钮状态 & 提示的核心函数
-function validateEmail(){
+function validateEmail(showMsg = false) {
   const v = emailInput.value.trim();
+
+  // 1) 完全空白
+  if (!v) {
+    if (showMsg) {
+      showFormError("Email is required.");
+    }
+    hintWrap?.classList.add("hidden");
+    emailInput.classList.remove("input-error");
+    return false;
+  }
+
   const okFormat = emailRegex.test(v);
   const domain   = getDomain(v);
 
-  let ok=false, needHint=false;
-  if (!okFormat) ok=false;
-  else if (allowOtherDomains) ok=true;
-  else { ok = PUBLIC_DOMAINS.has(domain); needHint = !ok; }
+  let ok = false;
+  let needHint = false;
 
+  // 2) 格式不对（少 @ 或 . 之类）
+  if (!okFormat) {
+    ok = false;
+    if (showMsg) {
+      showFormError("Please enter a valid email address.");
+    }
+  }
+  // 3) 玩家已经点过蓝字，允许任何合法域名
+  else if (allowOtherDomains) {
+    ok = true;
+    if (showMsg) {
+      clearFormError();
+    }
+  }
+  // 4) 默认：只接受 common domain，其他给蓝字 + 可选警告
+  else {
+    ok = PUBLIC_DOMAINS.has(domain);
+    needHint = !ok;
+
+    if (showMsg) {
+      if (!ok) {
+        showFormError(
+          "Please enter a common email, or click the blue text above to allow school/company emails."
+        );
+      } else {
+        clearFormError();
+      }
+    }
+  }
+
+  // 蓝字提示 + 红框
   hintWrap?.classList.toggle("hidden", !needHint);
-  emailInput.classList.toggle("input-error", !ok && v.length>0);
-  startBtnEl.disabled = !ok;
+  emailInput.classList.toggle("input-error", !ok && v.length > 0);
+
   return ok;
 }
 
 // 初始禁用，防止未校验就提交；并触发一次校验（应对浏览器自动填充）
-startBtnEl.disabled = true;
-setTimeout(validateEmail, 0);
+//startBtnEl.disabled = true;
+//setTimeout(validateEmail, 0);
 
 
 nameInput.addEventListener("input", () => {
-  const sanitized = sanitizeName(nameInput.value);
-  if (sanitized !== nameInput.value) nameInput.value = sanitized;
+  const raw = nameInput.value;               // NEW
+  const sanitized = sanitizeName(raw);
+
+  if (sanitized !== raw) {                   // NEW
+    showFormError("Name: only letters and spaces (invalid characters removed)");
+  }
+
+  if (sanitized !== nameInput.value) {
+    nameInput.value = sanitized;
+  }
+
+  // 如果 sanitizing 已经清掉非法字符，但你仍需提醒
   if (sanitized && !NAME_RE.test(sanitized)) {
     showFormError("Name: only letters and spaces");
-  } else {
+  } else if (sanitized === raw) {            // NEW
     clearFormError();
   }
 });
+
 
 
 // ===== Submit gate =====
@@ -357,16 +413,17 @@ playerForm.addEventListener("submit", async (e) => {
     return;
   }
 // 新的 —— 使用 validateEmail()
-if (!validateEmail()) {
-  showFormError("请输入公共邮箱或点击上方蓝字允许学校/公司邮箱。");
+// 使用 validateEmail(true) —— 按 NEXT 才真正提示信息
+if (!validateEmail(true)) {
   emailInput.focus();
   return;
 }
 
 
-  // disable 连点
-  startBtnEl.disabled = true;
-  startBtnEl.textContent = "Starting...";
+
+  // disable 连点---Email 无法按next后跳出提示的其中一个原因
+ // startBtnEl.disabled = true;
+  //startBtnEl.textContent = "Starting...";
 
   try {
     // 走你现有的开局流程
@@ -888,7 +945,7 @@ downloadCertBtn.addEventListener("click", () => {
 
     // ⚠️ 确保 email 存在
     if (!state.player.email) {
-      alert("⚠️ 未找到玩家邮箱，无法寄送证书。");
+      alert("⚠️ Player email not found. Unable to send the certificate.");
       return;
     }
 
@@ -905,16 +962,16 @@ downloadCertBtn.addEventListener("click", () => {
         try {
           const data = JSON.parse(text);
           if (data.ok) {
-            alert("✅ 证书已成功寄出到 " + state.player.email);
+            alert("✅ The certificate has been successfully sent to " + state.player.email);
           } else {
-            alert("❌ 无法寄出证书: " + (data.error || "未知错误"));
+            alert("❌ Failed to send the certificate: " + (data.error || "Unknown error"));
           }
         } catch (e) {
-          alert("⚠️ 服务器返回格式错误:\n" + text);
+          alert("⚠️ The server returned an invalid response:\n" + text);
         }
       })
       .catch((err) => {
-        alert("⚠️ 上传失败: " + err.message);
+        alert("⚠️ Upload failed: " + err.message);
       });
   };
 });
