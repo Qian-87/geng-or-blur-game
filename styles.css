@@ -89,7 +89,8 @@ label{ font-weight:700; font-size:.9rem }
 .tile img {
   width: auto;
   height: auto;
-  max-width: 100%;
+  max-width: 75%;
+  max-height: 75%; 
   object-fit: contain;   /* 关键！自动裁切填满 */
   object-position: center; /* 居中裁切 */
   display: block;
